@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Diagnosis">
+
+    <TextView
+        android:id="@+id/textViewDiagnosis"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Diagnosis\n\t\tMode"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.036" />
+
+    <Button
+        android:id="@+id/mainActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Main\nActivity"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.05"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.976" />
+
+    <TextView
+        android:id="@+id/carSpeed"
+        android:layout_width="117dp"
+        android:layout_height="32dp"
+        android:text="Car Speed"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.051"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.022" />
+
+    <TextView
+        android:id="@+id/distanceTraveled"
+        android:layout_width="115dp"
+        android:layout_height="31dp"
+        android:text="Distance Traveled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.05"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.087" />
+
+    <SeekBar
+        android:id="@+id/speedBar"
+        android:layout_width="255dp"
+        android:layout_height="57dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.454"
+        app:layout_constraintStart_toEndOf="@+id/mainActivity" />
+
+    <Button
+        android:id="@+id/backward"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Backward"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/forward"
+        app:layout_constraintVertical_bias="0.273" />
+
+    <Button
+        android:id="@+id/forward"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="176dp"
+        android:text="Forward"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/left"
+        android:layout_width="97dp"
+        android:layout_height="48dp"
+        android:text="Left"
+        app:layout_constraintBottom_toTopOf="@+id/backward"
+        app:layout_constraintEnd_toStartOf="@+id/forward"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/forward" />
+
+    <Button
+        android:id="@+id/right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Right"
+        app:layout_constraintBottom_toTopOf="@+id/backward"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/forward"
+        app:layout_constraintTop_toBottomOf="@+id/forward" />
+
+    <TextView
+        android:id="@+id/speedText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="40dp"
+        android:layout_marginBottom="32dp"
+        android:text="Speed: 0"
+        app:layout_constraintBottom_toTopOf="@+id/speedBar"
+        app:layout_constraintEnd_toStartOf="@+id/limitator"
+        app:layout_constraintHorizontal_bias="0.432"
+        app:layout_constraintStart_toStartOf="@+id/speedBar"
+        app:layout_constraintTop_toTopOf="@+id/limitator"
+        app:layout_constraintVertical_bias="0.681" />
+
+    <TextView
+        android:id="@+id/requestStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="124dp"
+        android:text="request Status"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.045"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/unBrick"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="36dp"
+        android:text="UnBrick"
+        app:layout_constraintBottom_toTopOf="@+id/mainActivity"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.044"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Switch
+        android:id="@+id/limitator"
+        android:layout_width="112dp"
+        android:layout_height="43dp"
+        android:layout_marginBottom="24dp"
+        android:text="Limitator\n\tviteza"
+        app:layout_constraintBottom_toTopOf="@+id/speedBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.892"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
