@@ -3,30 +3,32 @@ package com.example.nitro
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
-import android.view.View
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import java.io.IOException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.nio.ByteBuffer
+import java.util.LinkedList
+import java.util.Queue
 
 class Diagnosis : AppCompatActivity() {
 
-
+    private val recieveTermination: Char = ' '
+    private val sendTermination: Char = ' '
     private val speedLimit : Int = 30
 
     private var isMoving: Boolean = false
     private lateinit var displayText : TextView
-    private val client = OkHttpClient()
     private lateinit var mainB : Button
     private lateinit var forwardB : Button
     private lateinit var leftB : Button
@@ -38,11 +40,30 @@ class Diagnosis : AppCompatActivity() {
     private lateinit var limitator : Switch
     private var speed : Int = 0
 
+    private lateinit var streamInput: InputStream
+    private lateinit var streamOutput: OutputStream
+    private var sochet: Socket = Socket()
+    private var baffer: ByteArray = ByteArray(64)
+    private var lastMesaj: String = ""
+    override fun onDestroy() {
+        sochet.close()
+        super.onDestroy()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_diagnosis)
 
-        displayText = findViewById(com.example.nitro.R.id.requestStatus)
+        MainScope().launch(Dispatchers.IO){
+            openSocket("192.168.4.16")
+            connectSocket("192.168.4.1")
+            streamInput = sochet.getInputStream()
+            streamOutput = sochet.getOutputStream()
+            println("Stream input: $streamInput")
+            println("Stream output: $streamOutput")
+        }
+
+        displayText = findViewById(R.id.requestStatus)
         mainB = findViewById(R.id.mainActivity)
         mainB.setOnClickListener {openMainActivity()}
 
@@ -82,9 +103,51 @@ class Diagnosis : AppCompatActivity() {
 
     }
 
-    private fun handleUnBrick(){
-        var endpoint : String = "/unbrick"
+    private fun openSocket(iplocal: String){
+        sochet.bind(InetSocketAddress(iplocal,7876))
+        println("Socket creat pe adresa locala $iplocal")
+    }
+    private fun connectSocket(ipdestinatie: String){
+        sochet.connect(InetSocketAddress(ipdestinatie,80))
+        println("Socket conectat")
+    }
+    private fun recieveRequestWhile(){
+        MainScope().launch(Dispatchers.IO) {
+            println("Astept mesaj")
+            var mesaj = ""
+            var caracterCitit: Char
+            //println("Mesaj neparsat:")
+            do {
+                caracterCitit = streamInput.read().toChar()
+                //print(caracterCitit)
+                mesaj += caracterCitit
+            }while(caracterCitit != recieveTermination)
+            println("Mesaj primit: $mesaj")
+            displayText.text = mesaj
+        }
+    }
 
+    private fun recieveRequestBuffered(){
+        MainScope().launch(Dispatchers.IO) {
+            val nrBitiDisponibili = streamInput.available()
+            println("Am $nrBitiDisponibili biti de citit")
+            if(nrBitiDisponibili != 0){
+                streamInput.read(baffer)
+            }
+            lastMesaj = baffer.copyOf(baffer.indexOf(recieveTermination.code.toByte())).decodeToString()//poate bufni
+            println("Buffer curent: ${baffer.decodeToString()}")
+            println("Mesaj: $lastMesaj")
+        }
+    }
+    private fun sendRequest(messaj : String) {
+        MainScope().launch(Dispatchers.IO){
+            println("Trimit mesaj")
+            sochet.getOutputStream().write((messaj+sendTermination).encodeToByteArray())
+        }
+        recieveRequestWhile()
+    }
+    private fun handleUnBrick(){
+        val endpoint = "/unbrick"
         sendRequest(endpoint)
     }
 
@@ -102,13 +165,10 @@ class Diagnosis : AppCompatActivity() {
     }
 
     private fun handleBackward(backward: Boolean) {
-
-        var endpoint : String = ""
-        if(backward)
-            endpoint = "/backward"
+        val endpoint = if(backward)
+            "/backward"
         else
-            endpoint = "/stop"
-
+            "/stop"
         sendRequest(endpoint)
     }
 
@@ -124,13 +184,10 @@ class Diagnosis : AppCompatActivity() {
     }
 
     private fun handleRight(right: Boolean) {
-
-        var endpoint : String = ""
-        if(right)
-            endpoint = "/steerRight"
+        val endpoint = if(right)
+            "/steerRight"
         else
-            endpoint = "/endSteeringRight"
-
+            "/endSteeringRight"
         sendRequest(endpoint)
     }
 
@@ -146,12 +203,10 @@ class Diagnosis : AppCompatActivity() {
     }
 
     private fun handleLeft(left: Boolean) {
-
-        var endpoint : String = ""
-        if(left)
-            endpoint = "/steerLeft"
+        val endpoint = if(left)
+            "/steerLeft"
         else
-            endpoint = "/endSteeringLeft"
+            "/endSteeringLeft"
 
         sendRequest(endpoint)
     }
@@ -173,11 +228,10 @@ class Diagnosis : AppCompatActivity() {
 
         Log.v("app","FORWARD");
 
-        var endpoint : String = ""
-        if(moving)
-            endpoint = "/forward"
+        val endpoint = if(moving)
+            "/forward"
         else
-            endpoint = "/stop"
+            "/stop"
 
         sendRequest(endpoint)
     }
@@ -217,36 +271,9 @@ class Diagnosis : AppCompatActivity() {
     }
 
     private fun openMainActivity() {
-        var intent : Intent = Intent(this,MainActivity::class.java)
+        val intent : Intent = Intent(this,MainActivity::class.java)
         startActivity(intent)
     }
 
-    private fun sendRequest(endpoint : String) {
-
-        val baseUrl = "http://192.168.4.1"
-
-        val request = Request.Builder()
-            .url(baseUrl + endpoint)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                println("Request failed: ${e.message}")
-                runOnUiThread {
-                    displayText.setText("Request failed: ${e.message}")
-                }
-                e.printStackTrace()
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                runOnUiThread {
-                    displayText.setText("Request succeded!")
-
-                }
-                response.close()
-            }
-        })
-
-    }
 
 }
