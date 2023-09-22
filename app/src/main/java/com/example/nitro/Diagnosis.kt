@@ -15,8 +15,11 @@ import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.util.LinkedList
 import java.util.Queue
@@ -38,11 +41,12 @@ class Diagnosis : AppCompatActivity() {
     private lateinit var speedBarText : TextView
     private lateinit var unBrick : Button
     private lateinit var limitator : Switch
+    private lateinit var claxon: Button
     private var speed : Int = 0
 
-    private lateinit var streamInput: InputStream
-    private lateinit var streamOutput: OutputStream
-    private var sochet: Socket = Socket()
+    //private lateinit var streamInput: InputStream
+    //private lateinit var streamOutput: OutputStream
+    private var sochet: DatagramSocket = DatagramSocket(null)
     private var baffer: ByteArray = ByteArray(64)
     private var lastMesaj: String = ""
     override fun onDestroy() {
@@ -54,13 +58,15 @@ class Diagnosis : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_diagnosis)
 
+        sochet.soTimeout = 1000
+
         MainScope().launch(Dispatchers.IO){
             openSocket("192.168.4.16")
             connectSocket("192.168.4.1")
-            streamInput = sochet.getInputStream()
-            streamOutput = sochet.getOutputStream()
-            println("Stream input: $streamInput")
-            println("Stream output: $streamOutput")
+            //streamInput = sochet.getInputStream()
+            //streamOutput = sochet.getOutputStream()
+            //println("Stream input: $streamInput")
+            //println("Stream output: $streamOutput")
         }
 
         displayText = findViewById(R.id.requestStatus)
@@ -71,6 +77,12 @@ class Diagnosis : AppCompatActivity() {
         forwardB.setOnTouchListener { _, event ->
             forwardButtonTouchManager(event.action)
             true // Consume the touch event
+        }
+
+        claxon = findViewById(R.id.claxon)
+        claxon.setOnTouchListener{  _, event ->
+            claxonButtonTouchManager(event.action)
+            true
         }
 
         backwardB = findViewById(R.id.backward)
@@ -117,17 +129,17 @@ class Diagnosis : AppCompatActivity() {
             var mesaj = ""
             var caracterCitit: Char
             //println("Mesaj neparsat:")
-            do {
+            /*do {
                 caracterCitit = streamInput.read().toChar()
                 //print(caracterCitit)
                 mesaj += caracterCitit
-            }while(caracterCitit != recieveTermination)
+            }while(caracterCitit != recieveTermination)*/
             println("Mesaj primit: $mesaj")
             displayText.text = mesaj
         }
     }
 
-    private fun recieveRequestBuffered(){
+    /*private fun recieveRequestBuffered(){
         MainScope().launch(Dispatchers.IO) {
             val nrBitiDisponibili = streamInput.available()
             println("Am $nrBitiDisponibili biti de citit")
@@ -138,13 +150,28 @@ class Diagnosis : AppCompatActivity() {
             println("Buffer curent: ${baffer.decodeToString()}")
             println("Mesaj: $lastMesaj")
         }
+    }*/
+    private fun recieveRequestUDP(){
+        MainScope().launch(Dispatchers.IO) {
+            val pachet = DatagramPacket(ByteArray(30), 30)
+            try{
+                sochet.receive(pachet)
+                println(pachet.data.decodeToString())
+            }
+            catch (eroare: SocketTimeoutException){
+                println("Socketul si-a luat timeout")
+                println(eroare)
+            }
+        }
     }
     private fun sendRequest(messaj : String) {
         MainScope().launch(Dispatchers.IO){
             println("Trimit mesaj")
-            sochet.getOutputStream().write((messaj+sendTermination).encodeToByteArray())
+            //sochet.getOutputStream().write((messaj+sendTermination).encodeToByteArray())
+            sochet.send(DatagramPacket(messaj.encodeToByteArray(),messaj.length))
         }
-        recieveRequestWhile()
+        //recieveRequestWhile()
+        recieveRequestUDP()
     }
     private fun handleUnBrick(){
         val endpoint = "/unbrick"
@@ -164,6 +191,16 @@ class Diagnosis : AppCompatActivity() {
         }
     }
 
+    private fun claxonButtonTouchManager(action: Int){
+        when(action) {
+            MotionEvent.ACTION_DOWN -> {
+                sendRequest("/horn")
+            }
+            MotionEvent.ACTION_UP -> {
+                sendRequest("/hornStop")
+            }
+        }
+    }
     private fun handleBackward(backward: Boolean) {
         val endpoint = if(backward)
             "/backward"
