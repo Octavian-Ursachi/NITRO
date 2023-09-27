@@ -7,6 +7,26 @@
     tools:context=".Diagnosis">
 
     <TextView
+        android:id="@+id/pachetPrimit"
+        android:layout_width="150dp"
+        android:layout_height="19dp"
+        android:text="Pachet primit:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.049"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pachetePrimite" />
+
+    <TextView
+        android:id="@+id/pacheteTrimise"
+        android:layout_width="150dp"
+        android:layout_height="19dp"
+        android:text="Pachete trimise:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.048"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pachetePierdute" />
+
+    <TextView
         android:id="@+id/textViewDiagnosis"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -32,8 +52,8 @@
 
     <TextView
         android:id="@+id/carSpeed"
-        android:layout_width="117dp"
-        android:layout_height="32dp"
+        android:layout_width="150dp"
+        android:layout_height="20dp"
         android:text="Car Speed"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -43,16 +63,16 @@
         app:layout_constraintVertical_bias="0.022" />
 
     <TextView
-        android:id="@+id/distanceTraveled"
-        android:layout_width="115dp"
-        android:layout_height="31dp"
-        android:text="Distance Traveled"
+        android:id="@+id/pachetePierdute"
+        android:layout_width="150dp"
+        android:layout_height="20dp"
+        android:text="Pachete pierdute:"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.05"
+        app:layout_constraintHorizontal_bias="0.049"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.087" />
+        app:layout_constraintTop_toBottomOf="@+id/carSpeed"
+        app:layout_constraintVertical_bias="0.0" />
 
     <SeekBar
         android:id="@+id/speedBar"
@@ -121,15 +141,14 @@
         app:layout_constraintVertical_bias="0.681" />
 
     <TextView
-        android:id="@+id/requestStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="124dp"
-        android:text="request Status"
+        android:id="@+id/pachetePrimite"
+        android:layout_width="150dp"
+        android:layout_height="19dp"
+        android:text="Pachete primite:"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.045"
+        app:layout_constraintHorizontal_bias="0.05"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/pacheteTrimise" />
 
     <Button
         android:id="@+id/unBrick"

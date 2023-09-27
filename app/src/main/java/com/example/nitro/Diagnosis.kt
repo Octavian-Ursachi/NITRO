@@ -1,28 +1,24 @@
 package com.example.nitro
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.HandlerCompat.postDelayed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import java.io.ByteArrayInputStream
-import java.io.InputStream
-import java.io.OutputStream
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetSocketAddress
-import java.net.Socket
 import java.net.SocketTimeoutException
-import java.nio.ByteBuffer
-import java.util.LinkedList
-import java.util.Queue
+
 
 class Diagnosis : AppCompatActivity() {
 
@@ -30,25 +26,34 @@ class Diagnosis : AppCompatActivity() {
     private val sendTermination: Char = ' '
     private val speedLimit : Int = 30
 
-    private var isMoving: Boolean = false
-    private lateinit var displayText : TextView
+    //private var isMoving: Boolean = false
     private lateinit var mainB : Button
     private lateinit var forwardB : Button
     private lateinit var leftB : Button
     private lateinit var rightB : Button
     private lateinit var backwardB : Button
     private lateinit var speedBar : SeekBar
+
     private lateinit var speedBarText : TextView
+    private lateinit var carspeedText: TextView
+    private lateinit var pacheteTrimiseText: TextView
+    private lateinit var pachetePrimiteText: TextView
+    private lateinit var pachetPrimitText: TextView
+    private lateinit var pachetePierduteText: TextView
+
     private lateinit var unBrick : Button
     private lateinit var limitator : Switch
     private lateinit var claxon: Button
-    private var speed : Int = 0
 
-    //private lateinit var streamInput: InputStream
-    //private lateinit var streamOutput: OutputStream
+    private var speed : Int = 0
+    private var steer: Float = 0F
+    private var claxonez: Int = 0
+    private var unbrichez: Int = 0
+    private var directieViteza: Int = 0
+    private var nrPacTrimise = 0
+    private var nrPacPrimite = 0
+    private var nrPacPierdute = 0
     private var sochet: DatagramSocket = DatagramSocket(null)
-    private var baffer: ByteArray = ByteArray(64)
-    private var lastMesaj: String = ""
     override fun onDestroy() {
         sochet.close()
         super.onDestroy()
@@ -58,18 +63,18 @@ class Diagnosis : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_diagnosis)
 
-        sochet.soTimeout = 1000
+        sochet.soTimeout = 500
 
         MainScope().launch(Dispatchers.IO){
             openSocket("192.168.4.16")
             connectSocket("192.168.4.1")
-            //streamInput = sochet.getInputStream()
-            //streamOutput = sochet.getOutputStream()
-            //println("Stream input: $streamInput")
-            //println("Stream output: $streamOutput")
         }
+        carspeedText = findViewById(R.id.carSpeed)
+        pacheteTrimiseText = findViewById(R.id.pacheteTrimise)
+        pachetePrimiteText = findViewById(R.id.pachetePrimite)
+        pachetPrimitText = findViewById(R.id.pachetPrimit)
+        pachetePierduteText = findViewById(R.id.pachetePierdute)
 
-        displayText = findViewById(R.id.requestStatus)
         mainB = findViewById(R.id.mainActivity)
         mainB.setOnClickListener {openMainActivity()}
 
@@ -113,6 +118,17 @@ class Diagnosis : AppCompatActivity() {
         limitator = findViewById(R.id.limitator)
         limitator.setOnClickListener{if(limitator.isChecked && (speed > speedLimit) ) speed = speedLimit ; speedBarText.text = "Speed: $speed"}
 
+        val handler = Handler()
+        val delay = 60 // 1000 milliseconds == 1 second
+
+
+        handler.postDelayed(object : Runnable {
+            override fun run() {
+                sendRequest((speed * directieViteza).toString()+"$sendTermination$steer$sendTermination$claxonez$sendTermination$unbrichez")
+                recieveRequestUDP()
+                handler.postDelayed(this, delay.toLong())
+            }
+        }, delay.toLong())
     }
 
     private fun openSocket(iplocal: String){
@@ -123,43 +139,19 @@ class Diagnosis : AppCompatActivity() {
         sochet.connect(InetSocketAddress(ipdestinatie,80))
         println("Socket conectat")
     }
-    private fun recieveRequestWhile(){
-        MainScope().launch(Dispatchers.IO) {
-            println("Astept mesaj")
-            var mesaj = ""
-            var caracterCitit: Char
-            //println("Mesaj neparsat:")
-            /*do {
-                caracterCitit = streamInput.read().toChar()
-                //print(caracterCitit)
-                mesaj += caracterCitit
-            }while(caracterCitit != recieveTermination)*/
-            println("Mesaj primit: $mesaj")
-            displayText.text = mesaj
-        }
-    }
 
-    /*private fun recieveRequestBuffered(){
-        MainScope().launch(Dispatchers.IO) {
-            val nrBitiDisponibili = streamInput.available()
-            println("Am $nrBitiDisponibili biti de citit")
-            if(nrBitiDisponibili != 0){
-                streamInput.read(baffer)
-            }
-            lastMesaj = baffer.copyOf(baffer.indexOf(recieveTermination.code.toByte())).decodeToString()//poate bufni
-            println("Buffer curent: ${baffer.decodeToString()}")
-            println("Mesaj: $lastMesaj")
-        }
-    }*/
     private fun recieveRequestUDP(){
         MainScope().launch(Dispatchers.IO) {
             val pachet = DatagramPacket(ByteArray(30), 30)
             try{
                 sochet.receive(pachet)
-                println(pachet.data.decodeToString())
+                pachetPrimitText.text = "Pachet primit: ${pachet.data.decodeToString()}"
+                pachetePrimiteText.text = "Pachete primite: "+(++nrPacPrimite)
+                //println(pachet.data.decodeToString())
             }
             catch (eroare: SocketTimeoutException){
-                println("Socketul si-a luat timeout")
+                println("timeout")
+                pachetePierduteText.text = "Pachete pierdute: "+(++nrPacPierdute)
                 println(eroare)
             }
         }
@@ -167,26 +159,29 @@ class Diagnosis : AppCompatActivity() {
     private fun sendRequest(messaj : String) {
         MainScope().launch(Dispatchers.IO){
             println("Trimit mesaj")
-            //sochet.getOutputStream().write((messaj+sendTermination).encodeToByteArray())
+            pacheteTrimiseText.text = "Pachete trimise: "+(++nrPacTrimise)
             sochet.send(DatagramPacket(messaj.encodeToByteArray(),messaj.length))
         }
-        //recieveRequestWhile()
-        recieveRequestUDP()
+        //recieveRequestUDP()
     }
     private fun handleUnBrick(){
         val endpoint = "/unbrick"
-        sendRequest(endpoint)
+        //sendRequest(endpoint)
+        //recieveRequestUDP()
+        unbrichez = 1       //TODO AI GRIJA asta nu cred ca e safe dupa prima utilizare
     }
 
     private fun backwardButtonTouchManager(action: Int) {
         when(action) {
             MotionEvent.ACTION_DOWN -> {
-                handleBackward(true)
-                isMoving = true
+                //handleBackward(true)
+                directieViteza = -1
+                //isMoving = true
             }
             MotionEvent.ACTION_UP -> {
-                handleBackward(false)
-                isMoving = false
+                //handleBackward(false)
+                //isMoving = false
+                directieViteza = 0
             }
         }
     }
@@ -194,10 +189,14 @@ class Diagnosis : AppCompatActivity() {
     private fun claxonButtonTouchManager(action: Int){
         when(action) {
             MotionEvent.ACTION_DOWN -> {
-                sendRequest("/horn")
+                //sendRequest("/horn")
+                //recieveRequestUDP()
+                claxonez = 1
             }
             MotionEvent.ACTION_UP -> {
-                sendRequest("/hornStop")
+                claxonez = 0
+                //sendRequest("/hornStop")
+                //recieveRequestUDP()
             }
         }
     }
@@ -206,16 +205,19 @@ class Diagnosis : AppCompatActivity() {
             "/backward"
         else
             "/stop"
-        sendRequest(endpoint)
+        //sendRequest(endpoint)
+        //recieveRequestUDP()
     }
 
     private fun rightButtonTouchManager(action: Int) {
         when(action) {
             MotionEvent.ACTION_DOWN -> {
-                handleRight(true)
+                //handleRight(true)
+                steer = 1f
             }
             MotionEvent.ACTION_UP -> {
-                handleRight(false)
+                //handleRight(false)
+                steer = 0f
             }
         }
     }
@@ -226,15 +228,18 @@ class Diagnosis : AppCompatActivity() {
         else
             "/endSteeringRight"
         sendRequest(endpoint)
+        recieveRequestUDP()
     }
 
     private fun leftButtonTouchManager(action: Int) {
         when(action) {
             MotionEvent.ACTION_DOWN -> {
-                handleLeft(true)
+                //handleLeft(true)
+                steer = -1f
             }
             MotionEvent.ACTION_UP -> {
-                handleLeft(false)
+                //handleLeft(false)
+                steer = 0f
             }
         }
     }
@@ -246,17 +251,20 @@ class Diagnosis : AppCompatActivity() {
             "/endSteeringLeft"
 
         sendRequest(endpoint)
+        recieveRequestUDP()
     }
 
     private fun forwardButtonTouchManager(action: Int) {
         when(action) {
             MotionEvent.ACTION_DOWN -> {
-                handleForward(true)
-                isMoving = true
+                //handleForward(true)
+                //isMoving = true
+                directieViteza = 1
             }
             MotionEvent.ACTION_UP -> {
-                handleForward(false)
-                isMoving = false
+                //handleForward(false)
+                //isMoving = false
+                directieViteza = 0
             }
         }
     }
@@ -271,6 +279,7 @@ class Diagnosis : AppCompatActivity() {
             "/stop"
 
         sendRequest(endpoint)
+        recieveRequestUDP()
     }
 
     private fun handleSpeedBar() : SeekBar.OnSeekBarChangeListener {
@@ -284,14 +293,14 @@ class Diagnosis : AppCompatActivity() {
                     if(speed > speedLimit)
                         speed = speedLimit
                 }
-                val currentTime = System.currentTimeMillis()
+                /*val currentTime = System.currentTimeMillis()
                 if (currentTime - lastUpdateTime >= debounceDelay) {
-                    lastUpdateTime = currentTime
+                    lastUpdateTime = currentTime*/
 
                     speedBarText.text = "Speed: $speed"
-                    sendRequest("/speed:$speed")
-
-                }
+                    //sendRequest("/speed:$speed")
+                    //recieveRequestUDP()
+                //}
             }
             override fun onStartTrackingTouch(p0: SeekBar?) {
             }
@@ -302,7 +311,8 @@ class Diagnosis : AppCompatActivity() {
                     progress = speedLimit
 
                 speedBarText.text = "Speed: $progress"
-                sendRequest("/speed:$progress ")
+                //sendRequest("/speed:$progress ")
+                //recieveRequestUDP()
             }
         }
     }
